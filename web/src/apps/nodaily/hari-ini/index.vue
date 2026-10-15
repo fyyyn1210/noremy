@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { api, fmtDate, schemaOf, type Row } from '../../api'
-import DbForm from '../../components/DbForm.vue'
-import Icon from '../../components/Icon.vue'
-import Ring from '../../components/Ring.vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
+import { api, fmtDate, schemaOf, type Row } from '../../../api'
+import { isDark, toggleTheme } from '../../../prefs'
+import DbForm from '../../../components/DbForm.vue'
+import SwipeItem from '../../../components/SwipeItem.vue'
+import Icon from '../../../components/Icon.vue'
+import Ring from '../../../components/Ring.vue'
 
-type Today = { today: string; habits: Row[]; tasks: Row[]; learning: Row[]; modes: Row[] }
+type Today = { today: string; habits: Row[]; tasks: Row[]; tasksDone: Row[]; learning: Row[]; modes: Row[] }
 type Week = { today: string; days: { date: string; total: number; done: number }[]; streak: number }
 
 const data = ref<Today | null>(null)
@@ -71,13 +73,52 @@ async function setStatus(h: Row, v: string) {
   }
 }
 
-async function done(t: Row) {
+// Centang/batal: pindah antar daftar dulu (optimistis), kembalikan bila gagal simpan.
+// Server mengisi/mengosongkan "Done At" otomatis.
+async function setDone(t: Row, on: boolean) {
+  const d = data.value!
+  const [from, to] = on ? [d.tasks, d.tasksDone] : [d.tasksDone, d.tasks]
+  const i = from.indexOf(t)
+  if (i < 0) return
+  from.splice(i, 1)
+  const old = { ...t.props }
+  t.props.Done = on
+  t.props['Done At'] = on ? { start: new Date().toISOString(), end: null } : null
+  on ? to.unshift(t) : to.push(t)
   try {
-    await api(`/db/tasks/${t.id}`, 'PATCH', { Done: true })
-    data.value!.tasks = data.value!.tasks.filter((x) => x.id !== t.id)
+    Object.assign(t, await api<Row>(`/db/tasks/${t.id}`, 'PATCH', { Done: on }))
   } catch (e: any) {
+    to.splice(to.indexOf(t), 1)
+    t.props = old
+    from.splice(i, 0, t)
     err.value = e.message
   }
+}
+const doneTime = (t: Row) =>
+  t.props['Done At']?.start
+    ? new Date(t.props['Done At'].start).toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' })
+    : ''
+
+const STATUS_COLOR: Record<string, string> = {
+  Done: 'var(--green)',
+  'In Progress': 'var(--blue)',
+  Missed: 'var(--red)',
+  'Not started': 'var(--faint)',
+}
+const statusDlg = ref<HTMLDialogElement>()
+const statusFor = ref<Row | null>(null)
+async function openStatus(h: Row) {
+  statusFor.value = h
+  await nextTick()
+  statusDlg.value?.showModal()
+}
+function pick(s: string) {
+  const h = statusFor.value
+  statusDlg.value?.close()
+  if (h && s !== h.props.Status) setStatus(h, s)
+}
+function sheetBackdrop(e: MouseEvent) {
+  if (e.target === statusDlg.value && e.clientY < statusDlg.value!.getBoundingClientRect().top) statusDlg.value!.close()
 }
 
 const newTask = () => (editing.value = { key: 'tasks', row: null, defaults: { 'Due Date': { start: data.value?.today, end: null } } })
@@ -87,11 +128,12 @@ const dateRange = (r: Row) => fmtDate({ start: r.props['Start Date']?.start, end
 <template>
   <main class="screen">
     <header class="head">
-      <div class="brand">
-        <span class="mark"><Icon name="logo" :size="16" :width="2.6" /></span>Noremy
-      </div>
+      <a href="#/apps" class="brand" style="text-decoration: none" aria-label="NoDaily, buka semua aplikasi Noremy">
+        <span class="mark"><Icon name="grid" :size="16" :width="2.2" /></span>NoDaily
+      </a>
       <div class="row">
         <span class="streak" :aria-label="`Streak ${week?.streak ?? 0} hari`"><Icon name="flame" :size="16" :width="2.2" />{{ week?.streak ?? '–' }}</span>
+        <button class="icon-btn" :aria-label="isDark ? 'Mode terang' : 'Mode gelap'" @click="toggleTheme"><Icon :name="isDark ? 'sun' : 'moon'" :size="18" /></button>
         <button class="icon-btn" aria-label="Muat ulang" @click="load"><Icon name="refresh" :size="18" /></button>
       </div>
     </header>
@@ -119,8 +161,11 @@ const dateRange = (r: Row) => fmtDate({ start: r.props['Start Date']?.start, end
 
       <div class="minis">
         <div class="card mini">
-          <div><b>{{ data.tasks.length }}</b><div class="small muted">Task terbuka<template v-if="overdue"> · <span class="error">{{ overdue }} telat</span></template></div></div>
-          <Ring :value="data.tasks.length ? 1 - overdue / data.tasks.length : 1" color="var(--blue)"><Icon name="task" :size="18" style="color: var(--blue)" /></Ring>
+          <div>
+            <b>{{ data.tasksDone.length }}</b><span class="small muted" style="font-weight: 600">/{{ data.tasks.length + data.tasksDone.length }}</span>
+            <div class="small muted">Task selesai<template v-if="overdue"> · <span class="error">{{ overdue }} telat</span></template></div>
+          </div>
+          <Ring :value="data.tasksDone.length / (data.tasks.length + data.tasksDone.length || 1)" color="var(--blue)"><Icon name="task" :size="18" style="color: var(--blue)" /></Ring>
         </div>
         <div class="card mini">
           <div><b>{{ data.learning.length }}</b><div class="small muted">Review belajar</div></div>
@@ -157,24 +202,40 @@ const dateRange = (r: Row) => fmtDate({ start: r.props['Start Date']?.start, end
             <span class="title">{{ h.title }}</span>
             <span class="sub">{{ (h.props.Tags ?? []).join(' · ') || 'Habit' }}</span>
           </button>
-          <select
-            class="pill" :class="STATUS_CLASS[h.props.Status]" :value="h.props.Status" :aria-label="`Status ${h.title}`"
-            @change="setStatus(h, ($event.target as HTMLSelectElement).value)"
-          >
-            <option v-for="s in statuses" :key="s">{{ s }}</option>
-          </select>
+          <button class="pill status-btn" :class="STATUS_CLASS[h.props.Status]" :aria-label="`Status ${h.title}: ${h.props.Status}. Ubah`" @click="openStatus(h)">
+            {{ h.props.Status ?? '—' }}<Icon name="down" :size="14" :width="2.4" />
+          </button>
         </li>
       </ul>
 
-      <div class="section-head"><h2>Tasks</h2></div>
-      <p v-if="!data.tasks.length" class="muted">Tidak ada task jatuh tempo.</p>
+      <div class="section-head">
+        <h2>Tasks</h2>
+        <span v-if="data.tasks.length" class="small muted">Geser ke kanan = selesai / batal</span>
+      </div>
+      <p v-if="!data.tasks.length && !data.tasksDone.length" class="muted">Tidak ada task terbuka.</p>
       <ul class="list">
-        <li v-for="t in data.tasks" :key="t.id" class="item">
-          <input type="checkbox" :aria-label="`Selesai: ${t.title}`" @change="done(t)" />
-          <button class="grow" style="all: unset; flex: 1; min-width: 0; cursor: pointer" @click="editing = { key: 'tasks', row: t }">
-            <span class="title">{{ t.title }}</span>
-            <span class="sub" :class="{ error: t.props['Due Date']?.start?.slice(0, 10) < data.today }">{{ fmtDate(t.props['Due Date']) || 'Tanpa tanggal' }}<template v-if="t.props.Category"> · {{ t.props.Category }}</template></span>
-          </button>
+        <li v-for="t in data.tasks" :key="t.id">
+          <SwipeItem @swipe="setDone(t, true)">
+            <div class="item">
+              <button class="check-btn" :aria-label="`Tandai selesai: ${t.title}`" @click="setDone(t, true)"><Icon name="check" :size="16" :width="2.6" /></button>
+              <button class="grow" style="all: unset; flex: 1; min-width: 0; cursor: pointer" @click="editing = { key: 'tasks', row: t }">
+                <span class="title">{{ t.title }}</span>
+                <span class="sub" :class="{ error: t.props['Due Date']?.start?.slice(0, 10) < data.today }">{{ fmtDate(t.props['Due Date']) || 'Tanpa tanggal' }}<template v-if="t.props.Category"> · {{ t.props.Category }}</template></span>
+              </button>
+            </div>
+          </SwipeItem>
+        </li>
+        <!-- Selesai hari ini: pudar, geser lagi untuk membatalkan -->
+        <li v-for="t in data.tasksDone" :key="t.id">
+          <SwipeItem undo label="Batal selesai" @swipe="setDone(t, false)">
+            <div class="item is-done">
+              <button class="check-btn on" :aria-label="`Batalkan selesai: ${t.title}`" @click="setDone(t, false)"><Icon name="check" :size="16" :width="2.6" /></button>
+              <button class="grow" style="all: unset; flex: 1; min-width: 0; cursor: pointer" @click="editing = { key: 'tasks', row: t }">
+                <span class="title">{{ t.title }}</span>
+                <span class="sub">Selesai {{ doneTime(t) }}<template v-if="t.props.Category"> · {{ t.props.Category }}</template></span>
+              </button>
+            </div>
+          </SwipeItem>
         </li>
       </ul>
 
@@ -195,5 +256,25 @@ const dateRange = (r: Row) => fmtDate({ start: r.props['Start Date']?.start, end
 
     <button class="fab" aria-label="Tambah task hari ini" @click="newTask"><Icon name="plus" :size="24" :width="2.4" /></button>
     <DbForm v-if="editing" :db-key="editing.key" :row="editing.row" :defaults="editing.defaults" @close="editing = null" @saved="load" @deleted="load" />
+
+    <!-- Action sheet ubah status habit -->
+    <dialog ref="statusDlg" class="sheet" aria-label="Ubah status habit" @close="statusFor = null" @click="sheetBackdrop">
+      <div v-if="statusFor" class="stack" style="gap: 16px">
+        <span class="grabber" />
+        <div>
+          <span class="small muted" style="font-weight: 600">Status habit · {{ statusFor.props.Time || 'tanpa jam' }}</span>
+          <h2 style="font-size: 22px; font-weight: 800">{{ statusFor.title }}</h2>
+        </div>
+        <div class="options" role="radiogroup" :aria-label="`Status ${statusFor.title}`">
+          <button
+            v-for="s in statuses" :key="s" class="option" role="radio" :aria-checked="s === statusFor.props.Status" @click="pick(s)"
+          >
+            <span class="dot" :style="{ background: STATUS_COLOR[s] ?? 'var(--faint)' }" />
+            <span class="grow">{{ s }}</span>
+            <Icon v-if="s === statusFor.props.Status" name="check" :size="18" :width="2.6" />
+          </button>
+        </div>
+      </div>
+    </dialog>
   </main>
 </template>

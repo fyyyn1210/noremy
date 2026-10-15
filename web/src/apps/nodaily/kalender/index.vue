@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { api, DB_LABEL, todayWIB, type Row } from '../../api'
-import DbForm from '../../components/DbForm.vue'
-import Icon from '../../components/Icon.vue'
+import { api, DB_LABEL, todayWIB, type Row } from '../../../api'
+import DbForm from '../../../components/DbForm.vue'
+import Icon from '../../../components/Icon.vue'
 
 type Item = { source: string; id: string; url: string; title: string; start: string; end: string | null }
 

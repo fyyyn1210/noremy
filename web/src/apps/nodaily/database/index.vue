@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { api, DB_LABEL } from '../../api'
-import DbTable from '../../components/DbTable.vue'
+import { api, DB_LABEL } from '../../../api'
+import DbTable from '../../../components/DbTable.vue'
 
 const keys = ref<string[]>([])
 const key = ref('tasks')

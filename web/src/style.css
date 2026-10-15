@@ -24,8 +24,9 @@
   color-scheme: light;
   font: 15px/1.45 'Plus Jakarta Sans', system-ui, sans-serif;
 }
+/* Gelap: ikut sistem kecuali dipaksa terang, atau dipaksa gelap lewat data-theme. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --bg: #0f0f11;
     --card: #1c1c20;
     --fg: #f2f2f4;
@@ -45,6 +46,26 @@
     --shadow-lg: none;
     color-scheme: dark;
   }
+}
+:root[data-theme='dark'] {
+    --bg: #0f0f11;
+    --card: #1c1c20;
+    --fg: #f2f2f4;
+    --muted: #a6a6ae;
+    --faint: #7d7d86;
+    --line: #2a2a30;
+    --track: #2c2c33;
+    --soft: #26262b;
+    --ink: #f2f2f4;
+    --on-ink: #111114;
+    --green-ink: #4cc38a;
+    --blue-ink: #7fa3f5;
+    --orange-ink: #f39a6b;
+    --purple-ink: #b39af8;
+    --red: #f07075;
+    --shadow-sm: none;
+    --shadow-lg: none;
+    color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -195,6 +216,30 @@ dialog.sheet form { display: flex; flex-direction: column; gap: 16px; }
 .bars .tip { position: absolute; bottom: calc(100% + 6px); background: var(--ink); color: var(--on-ink); border-radius: 10px; padding: 4px 8px; font-size: 11px; font-weight: 700; white-space: nowrap; }
 .stat { display: flex; flex-direction: column; gap: 2px; }
 .stat b { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+
+/* Swipe untuk selesai */
+.swipe { position: relative; border-radius: 18px; overflow: hidden; background: var(--green); }
+.swipe-bg { position: absolute; inset: 0; display: flex; align-items: center; gap: 8px; padding-left: 20px; color: #fff; font-weight: 700; }
+.swipe.undo { background: var(--faint); }
+.swipe-fg { position: relative; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.swipe-fg .item { box-shadow: none; }
+.check-btn { width: 28px; height: 28px; flex: none; border-radius: 999px; border: 2px solid var(--line); background: transparent; color: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+.check-btn:hover, .check-btn:focus-visible { border-color: var(--green); color: var(--green); }
+.check-btn.on { background: var(--green); border-color: var(--green); color: #fff; }
+.item.is-done > * { opacity: 0.55; }
+.item.is-done .title { text-decoration: line-through; }
+
+/* Action sheet status */
+.status-btn { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; min-height: 32px; }
+.options { display: flex; flex-direction: column; gap: 8px; }
+.option { display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 0 16px; border-radius: 16px; border: 1.5px solid var(--line); background: transparent; color: var(--fg); font-weight: 700; font-size: 15px; cursor: pointer; text-align: left; }
+.option[aria-checked='true'] { border-color: var(--ink); background: var(--soft); }
+.option .dot { width: 10px; height: 10px; }
+
+/* Launcher Noremy */
+.app-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 16px 10px; }
+.app-tile { display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; font-size: 13px; font-weight: 700; color: var(--fg); }
+.app-icon { width: 68px; height: 68px; border-radius: 20px; display: flex; align-items: center; justify-content: center; background: var(--card); box-shadow: var(--shadow-sm); }
 
 /* Login */
 .login { max-width: 380px; margin: 18vh auto 0; padding: 16px; display: flex; flex-direction: column; gap: 16px; }

@@ -47,6 +47,18 @@ test("habitDays: rekap per tanggal WIB dan streak", async () => {
   expect(habitDays([row("2026-10-14T01:00:00Z", "Done")], "2026-10-15", 3).streak).toBe(1);
 });
 
+test("stampDone: isi/kosongkan Done At saat Done berubah", async () => {
+  const { stampDone } = await import("./notion");
+  const schema = { Done: { type: "checkbox" }, "Done At": { type: "date" } };
+  const now = new Date("2026-10-15T07:32:00Z");
+  expect(stampDone(schema, { Done: true }, now)["Done At"]).toEqual({ start: "2026-10-15T07:32:00.000Z", end: null });
+  expect(stampDone(schema, { Done: false }, now)["Done At"]).toBeNull();
+  expect(stampDone(schema, { Name: "x" }, now)).toEqual({ Name: "x" }); // Done tidak disentuh
+  const manual = { Done: true, "Done At": { start: "2026-10-01", end: null } };
+  expect(stampDone(schema, manual, now)).toBe(manual); // Done At manual menang
+  expect(stampDone({ Done: { type: "checkbox" } }, { Done: true }, now)).toEqual({ Done: true }); // DB tanpa Done At
+});
+
 test("toNotion lalu value kembali ke nilai semula", () => {
   const schema = {
     T: { type: "title" }, N: { type: "number" }, C: { type: "checkbox" }, S: { type: "status" },

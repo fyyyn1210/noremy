@@ -1,25 +1,23 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { api, setToken, token } from './api'
+import { installed } from './prefs'
+import { APPS } from './apps/registry'
+import Launcher from './apps/index.vue'
 import Icon from './components/Icon.vue'
-import HariIni from './apps/hari-ini/index.vue'
-import Kalender from './apps/kalender/index.vue'
-import Database from './apps/database/index.vue'
-import Catatan from './apps/catatan/index.vue'
-import Monitor from './apps/monitor/index.vue'
 
-// Menu baru = satu folder di apps/ + satu baris di sini.
-const TABS = [
-  { id: 'hari-ini', label: 'Hari ini', icon: 'home', comp: HariIni },
-  { id: 'kalender', label: 'Kalender', icon: 'calendar', comp: Kalender },
-  { id: 'database', label: 'Database', icon: 'db', comp: Database },
-  { id: 'catatan', label: 'Catatan', icon: 'note', comp: Catatan },
-  { id: 'monitor', label: 'Monitor', icon: 'chart', comp: Monitor },
-]
-
-const hash = ref(location.hash.slice(2))
-addEventListener('hashchange', () => (hash.value = location.hash.slice(2)))
-const tab = computed(() => TABS.find((t) => t.id === hash.value) ?? TABS[0])
+// Rute hash: #/apps = katalog Noremy, #/<app>/<tab> = sub-app terpasang.
+const hash = ref(location.hash)
+addEventListener('hashchange', () => (hash.value = location.hash))
+const route = computed(() => {
+  const [appId = '', tab = ''] = hash.value.replace(/^#\/?/, '').split('/')
+  const app = APPS.find((a) => a.id === appId && a.comp && installed.value.includes(a.id))
+  if (app) return { app, tab: tab || app.home }
+  if (appId === 'apps') return null
+  // Tanpa rute: buka sub-app pertama yang terpasang, kalau ada.
+  const first = !appId && APPS.find((a) => a.comp && installed.value.includes(a.id))
+  return first ? { app: first, tab: first.home } : null
+})
 
 const input = ref('')
 const loginErr = ref('')
@@ -47,19 +45,8 @@ async function login() {
     <p v-if="loginErr" class="error" role="alert">{{ loginErr }}</p>
     <button class="btn">Masuk</button>
   </form>
-  <template v-else>
-    <KeepAlive>
-      <component :is="tab.comp" :key="tab.id" />
-    </KeepAlive>
-    <nav class="tabbar" aria-label="Menu utama">
-      <div class="inner">
-        <a
-          v-for="t in TABS" :key="t.id" :href="`#/${t.id}`"
-          :class="{ active: t.id === tab.id }" :aria-current="t.id === tab.id ? 'page' : undefined"
-        >
-          <Icon :name="t.icon" :width="t.id === tab.id ? 2.4 : 1.8" />{{ t.label }}
-        </a>
-      </div>
-    </nav>
-  </template>
+  <KeepAlive v-else>
+    <component :is="route.app.comp" v-if="route" :key="route.app.id" :tab="route.tab" />
+    <Launcher v-else />
+  </KeepAlive>
 </template>

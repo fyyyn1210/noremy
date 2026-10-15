@@ -1,7 +1,7 @@
 # Proyek: Aplikasi kecil di atas Notion + push notifikasi
 
-> Nama produk belum diputuskan. Kandidat: Sigap, Nudgo, Lumo, Tepat, Ketuk.
-> Jangan memakai kata "Notion" di nama produk (merek dagang). Sementara pakai nama folder/paket netral, mudah diganti nanti.
+> Nama platform: **Noremy** (induk). Sub-app bernama No<Fungsi>: **NoDaily** (yang pertama), lalu NoFinance, NoLearn, NoWork, dst.
+> Satu PWA Noremy berisi launcher `#/apps`; sub-app dipasang/dilepas per perangkat. Jangan memakai kata "Notion" di nama produk (merek dagang).
 
 ## Tujuan
 
@@ -55,7 +55,8 @@ Noremy/
 │       └── lib/            notion.ts (whitelist DBS, simplify/toNotion), push.ts, time.ts, lib.test.ts
 ├── web/                    Vue 3 + TS + vite-plugin-pwa (injectManifest)
 │   └── src/
-│       ├── apps/           hari-ini/, kalender/, database/, catatan/, monitor/ (satu folder per menu, daftar di App.vue)
+│       ├── apps/           index.vue (launcher #/apps), registry.ts (daftar sub-app), nodaily/ (tab: hari-ini, kalender, database, catatan, monitor)
+│       ├── prefs.ts        tema (sistem/terang/gelap), sub-app terpasang, prompt install PWA
 │       ├── components/     DbTable, DbForm (form dari skema Notion), Markdown
 │       ├── api.ts          fetch + token + helper tanggal WIB
 │       └── sw.ts           service worker (precache, cache API, push)
@@ -67,7 +68,7 @@ Noremy/
 | key | Database | Catatan |
 |---|---|---|
 | habits | Habit Database (Daily Tracker) | entri harian otomatis; `Time` teks "20.00"; `Status`; `Notified` |
-| tasks | Tasks Database (Daily Tracker) | `Name`, `Due Date` (bisa berjam), `Done`, `Notified` |
+| tasks | Tasks Database (Daily Tracker) | `Name`, `Due Date` (bisa berjam), `Done`, `Done At` (diisi server saat Done berubah), `Notified` |
 | learningMode | Learning Mode | Start/End Date |
 | english | Daily English Tracker | Start Date |
 | learning | Learning Progress (Spaced Repetition) | `Next Session`, `Stage` |
@@ -94,7 +95,6 @@ Lihat `server/.env.example` dan `web/.env.example`. Nama properti untuk `/tick` 
 
 ## Yang belum diputuskan
 
-- Nama produk.
 - Satu PWA dengan banyak menu (disarankan, mulai dari ini) atau banyak PWA terpisah dengan ikon masing-masing.
 - Struktur database auto-create di Notion: nama database, nama properti jam (tipe Date dengan waktu atau teks "09:00"), apakah tiap entri sudah berisi tanggal hari itu, dan apakah ada properti status selesai. Isi nilai `PROP_*` di atas setelah dicek.
 - Jika nanti dijadikan jasa untuk banyak pengguna: perlu OAuth Notion publik dan penyimpanan multi-tenant. Itu di luar versi pertama yang untuk pemakaian pribadi.

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { api, type Row } from '../../api'
-import Icon from '../../components/Icon.vue'
+import { api, type Row } from '../../../api'
+import Icon from '../../../components/Icon.vue'
 
 type Today = { today: string; habits: Row[]; tasks: Row[]; learning: Row[] }
 type Week = { today: string; days: { date: string; total: number; done: number }[]; streak: number }

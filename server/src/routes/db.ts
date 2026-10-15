@@ -1,10 +1,15 @@
 import { Elysia, NotFoundError } from "elysia";
-import { DBS, notion, schemaOf, schemaMap, simplify, toNotion } from "../lib/notion";
+import { DBS, notion, schemaOf, schemaMap, simplify, stampDone, toNotion } from "../lib/notion";
 
 const ds = (key: string) => {
   const id = DBS[key];
   if (!id) throw new NotFoundError();
   return id;
+};
+
+const props = async (id: string, body: unknown) => {
+  const schema = await schemaMap(id);
+  return toNotion(schema, stampDone(schema, body as any));
 };
 
 // CRUD generik untuk semua database di whitelist DBS.
@@ -28,14 +33,14 @@ export default new Elysia({ prefix: "/db" })
     const id = ds(params.key);
     const page = await notion.pages.create({
       parent: { type: "data_source_id", data_source_id: id },
-      properties: toNotion(await schemaMap(id), body as any),
+      properties: await props(id, body),
     });
     return simplify(page);
   })
   .patch("/:key/:id", async ({ params, body }) => {
     const page = await notion.pages.update({
       page_id: params.id,
-      properties: toNotion(await schemaMap(ds(params.key)), body as any),
+      properties: await props(ds(params.key), body),
     });
     return simplify(page);
   })

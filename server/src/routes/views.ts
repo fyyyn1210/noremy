@@ -74,6 +74,16 @@ export default new Elysia()
       },
       sorts: [{ property: "Due Date", direction: "ascending" }, { timestamp: "created_time", direction: "descending" }],
     });
+    // Task yang dicentang hari ini tetap tampil (pudar) supaya bisa dibatalkan.
+    const tasksDone = await queryAll(DBS.tasks!, {
+      filter: {
+        and: [
+          { property: "Done", checkbox: { equals: true } },
+          { property: "Done At", date: { on_or_after: startOfDayWIB(today) } },
+        ],
+      },
+      sorts: [{ property: "Done At", direction: "descending" }],
+    });
     const learning = await queryAll(DBS.learning!, {
       filter: {
         and: [
@@ -105,6 +115,7 @@ export default new Elysia()
       today,
       habits: habits.map(simplify),
       tasks: tasks.map(simplify),
+      tasksDone: tasksDone.map(simplify),
       learning: learning.map(simplify),
       modes: modes.map(simplify),
     };

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { api, type Row } from '../../api'
-import Markdown from '../../components/Markdown.vue'
-import DbForm from '../../components/DbForm.vue'
-import Icon from '../../components/Icon.vue'
+import { api, type Row } from '../../../api'
+import Markdown from '../../../components/Markdown.vue'
+import DbForm from '../../../components/DbForm.vue'
+import Icon from '../../../components/Icon.vue'
 
 type Page = { id: string; url: string; title: string; markdown: string }
 type Child = { id: string; type: string; title: string }

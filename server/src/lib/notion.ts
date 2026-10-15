@@ -80,6 +80,13 @@ export function toNotion(schema: Record<string, { type: string }>, values: Recor
   return out;
 }
 
+/** Database dengan "Done" + "Done At": isi/kosongkan Done At otomatis saat Done berubah. */
+export function stampDone(schema: Record<string, { type: string }>, values: Record<string, Any>, now = new Date()) {
+  if (schema.Done?.type !== "checkbox" || schema["Done At"]?.type !== "date") return values;
+  if (!("Done" in values) || "Done At" in values) return values;
+  return { ...values, "Done At": values.Done ? { start: now.toISOString(), end: null } : null };
+}
+
 /** Skema ringkas: nama, tipe, opsi, read-only. */
 export async function schemaOf(dsId: string) {
   const ds: Any = await notion.dataSources.retrieve({ data_source_id: dsId });
