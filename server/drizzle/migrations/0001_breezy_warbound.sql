@@ -1,0 +1,1 @@
+ALTER TABLE "freelance_service_packages" ADD COLUMN "price_usd" varchar(255);
