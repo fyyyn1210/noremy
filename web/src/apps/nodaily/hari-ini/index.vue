@@ -25,6 +25,17 @@ const habits = computed(() => [...(data.value?.habits ?? [])].sort((a, b) => min
 const doneCount = computed(() => habits.value.filter((h) => h.props.Status === 'Done').length)
 const overdue = computed(() => data.value?.tasks.filter((t) => t.props['Due Date']?.start?.slice(0, 10) < data.value!.today).length ?? 0)
 
+// Urutan task: Priority (1 = paling penting, kosong paling bawah), lalu Due Date (kosong paling bawah).
+const rank = (v: unknown) => (typeof v === 'number' ? v : Infinity)
+const openTasks = computed(() =>
+  [...(data.value?.tasks ?? [])].sort(
+    (a, b) =>
+      rank(a.props.Priority) - rank(b.props.Priority) ||
+      (a.props['Due Date']?.start ?? '9999').localeCompare(b.props['Due Date']?.start ?? '9999'),
+  ),
+)
+const PRIO_CLASS: Record<number, string> = { 1: 'missed', 2: 'warn', 3: 'prog' }
+
 // Strip Senin–Minggu minggu ini.
 const LABELS = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
 const strip = computed(() => {
@@ -215,7 +226,7 @@ const dateRange = (r: Row) => fmtDate({ start: r.props['Start Date']?.start, end
       </div>
       <p v-if="!data.tasks.length && !data.tasksDone.length" class="muted">Tidak ada task terbuka.</p>
       <ul class="list">
-        <li v-for="t in data.tasks" :key="t.id">
+        <li v-for="t in openTasks" :key="t.id">
           <SwipeItem @swipe="setDone(t, true)">
             <div class="item">
               <button class="check-btn" :aria-label="`Tandai selesai: ${t.title}`" @click="setDone(t, true)"><Icon name="check" :size="16" :width="2.6" /></button>
@@ -223,6 +234,7 @@ const dateRange = (r: Row) => fmtDate({ start: r.props['Start Date']?.start, end
                 <span class="title">{{ t.title }}</span>
                 <span class="sub" :class="{ error: t.props['Due Date']?.start?.slice(0, 10) < data.today }">{{ fmtDate(t.props['Due Date']) || 'Tanpa tanggal' }}<template v-if="t.props.Category"> · {{ t.props.Category }}</template></span>
               </button>
+              <span v-if="typeof t.props.Priority === 'number'" class="pill" :class="PRIO_CLASS[t.props.Priority]" :aria-label="`Prioritas ${t.props.Priority}`">P{{ t.props.Priority }}</span>
             </div>
           </SwipeItem>
         </li>

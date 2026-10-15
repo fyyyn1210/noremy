@@ -68,7 +68,7 @@ Noremy/
 | key | Database | Catatan |
 |---|---|---|
 | habits | Habit Database (Daily Tracker) | entri harian otomatis; `Time` teks "20.00"; `Status`; `Notified` |
-| tasks | Tasks Database (Daily Tracker) | `Name`, `Due Date` (bisa berjam), `Done`, `Done At` (diisi server saat Done berubah), `Notified` |
+| tasks | Tasks Database (Daily Tracker) | `Name`, `Due Date` (bisa berjam), `Done`, `Done At` (diisi server saat Done berubah), `Priority` (angka, 1 = paling penting), `Notified` |
 | learningMode | Learning Mode | Start/End Date |
 | english | Daily English Tracker | Start Date |
 | learning | Learning Progress (Spaced Repetition) | `Next Session`, `Stage` |
