@@ -1,10 +1,12 @@
 import { defineAsyncComponent, type Component } from 'vue'
+import NoDailyLogo from '../components/NoDailyLogo.vue'
 
 export type AppInfo = {
   id: string
   name: string
   desc: string
-  icon: string // nama di components/Icon.vue
+  icon: string // nama di components/Icon.vue (dipakai bila tidak ada logo)
+  logo?: Component // logo khusus sub-app
   color: string // var(--…) untuk tile ikon
   home: string // tab awal
   comp?: Component // belum ada = "Segera"
@@ -17,7 +19,8 @@ export const APPS: AppInfo[] = [
     name: 'NoDaily',
     desc: 'Habit harian, to-do, kalender, catatan, dan monitor dari Daily Tracker.',
     icon: 'task',
-    color: 'var(--orange)',
+    logo: NoDailyLogo,
+    color: 'var(--fg)',
     home: 'hari-ini',
     comp: defineAsyncComponent(() => import('./nodaily/index.vue')),
   },

@@ -26,7 +26,7 @@ const THEMES: { id: Theme; label: string; icon: string }[] = [
   { id: 'light', label: 'Terang', icon: 'sun' },
   { id: 'dark', label: 'Gelap', icon: 'moon' },
 ]
-const tileStyle = (a: AppInfo) => `background: color-mix(in srgb, ${a.color} 16%, transparent); color: ${a.color}`
+const tileStyle = (a: AppInfo) => `background: color-mix(in srgb, ${a.color} ${a.logo ? 6 : 16}%, var(--card)); color: ${a.color}`
 </script>
 
 <template>
@@ -54,7 +54,7 @@ const tileStyle = (a: AppInfo) => `background: color-mix(in srgb, ${a.color} 16%
       <div class="section-head"><h2>Aplikasi saya</h2></div>
       <div class="app-grid">
         <a v-for="a in mine" :key="a.id" :href="`#/${a.id}/${a.home}`" class="app-tile">
-          <span class="app-icon" :style="tileStyle(a)"><Icon :name="a.icon" :size="30" :width="2" /></span>
+          <span class="app-icon" :style="tileStyle(a)"><component :is="a.logo" v-if="a.logo" :size="44" /><Icon v-else :name="a.icon" :size="30" :width="2" /></span>
           {{ a.name }}
         </a>
       </div>
@@ -63,7 +63,7 @@ const tileStyle = (a: AppInfo) => `background: color-mix(in srgb, ${a.color} 16%
     <div class="section-head"><h2>Semua aplikasi</h2></div>
     <ul class="list">
       <li v-for="a in APPS" :key="a.id" class="item" style="align-items: flex-start">
-        <span class="tile" :style="tileStyle(a)"><Icon :name="a.icon" :size="24" /></span>
+        <span class="tile" :style="tileStyle(a)"><component :is="a.logo" v-if="a.logo" :size="34" /><Icon v-else :name="a.icon" :size="24" /></span>
         <div class="grow">
           <span class="title">{{ a.name }}</span>
           <span class="sub">{{ a.desc }}</span>

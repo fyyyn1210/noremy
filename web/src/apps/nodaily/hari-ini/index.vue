@@ -5,7 +5,7 @@ import { isDark, toggleTheme } from '../../../prefs'
 import DbForm from '../../../components/DbForm.vue'
 import SwipeItem from '../../../components/SwipeItem.vue'
 import Icon from '../../../components/Icon.vue'
-import Logo from '../../../components/Logo.vue'
+import NoDailyLogo from '../../../components/NoDailyLogo.vue'
 import Ring from '../../../components/Ring.vue'
 
 type Today = { today: string; habits: Row[]; tasks: Row[]; tasksDone: Row[]; learning: Row[]; modes: Row[] }
@@ -130,7 +130,7 @@ const dateRange = (r: Row) => fmtDate({ start: r.props['Start Date']?.start, end
   <main class="screen">
     <header class="head">
       <a href="#/apps" class="brand" style="text-decoration: none" aria-label="NoDaily, buka semua aplikasi Noremy">
-        <Logo :size="30" />NoDaily
+        <NoDailyLogo :size="30" />NoDaily
       </a>
       <div class="row">
         <span class="streak" :aria-label="`Streak ${week?.streak ?? 0} hari`"><Icon name="flame" :size="16" :width="2.2" />{{ week?.streak ?? '–' }}</span>
