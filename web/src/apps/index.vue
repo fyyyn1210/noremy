@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import Icon from '../components/Icon.vue'
+import Logo from '../components/Logo.vue'
 import { APPS, type AppInfo } from './registry'
 import { installed, installPrompt, installPWA, isIOS, standalone, theme, type Theme } from '../prefs'
 
@@ -32,7 +33,7 @@ const tileStyle = (a: AppInfo) => `background: color-mix(in srgb, ${a.color} 16%
   <main class="screen">
     <header class="head">
       <div class="brand">
-        <span class="mark"><Icon name="logo" :size="16" :width="2.6" /></span>Noremy
+        <Logo :size="32" />Noremy
       </div>
     </header>
 

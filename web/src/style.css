@@ -164,7 +164,7 @@ dialog.sheet form { display: flex; flex-direction: column; gap: 16px; }
 
 /* Hari ini */
 .brand { display: flex; align-items: center; gap: 8px; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
-.brand .mark { width: 30px; height: 30px; border-radius: 9px; background: var(--ink); color: var(--on-ink); display: flex; align-items: center; justify-content: center; }
+.brand svg { flex: none; }
 .streak { display: flex; align-items: center; gap: 6px; background: var(--card); border-radius: 999px; padding: 7px 12px; font-weight: 700; box-shadow: var(--shadow-sm); }
 .streak svg { color: var(--orange); }
 .week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }

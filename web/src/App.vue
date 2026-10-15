@@ -4,7 +4,7 @@ import { api, setToken, token } from './api'
 import { installed } from './prefs'
 import { APPS } from './apps/registry'
 import Launcher from './apps/index.vue'
-import Icon from './components/Icon.vue'
+import Logo from './components/Logo.vue'
 
 // Rute hash: #/apps = katalog Noremy, #/<app>/<tab> = sub-app terpasang.
 const hash = ref(location.hash)
@@ -35,7 +35,7 @@ async function login() {
 <template>
   <form v-if="!token || loginErr" class="login" @submit.prevent="login">
     <div class="brand">
-      <span class="mark"><Icon name="logo" :size="16" :width="2.6" /></span>Noremy
+      <Logo :size="32" />Noremy
     </div>
     <p class="muted">Masukkan token aplikasi (<code>APP_TOKEN</code> dari server), bukan token Notion.</p>
     <label class="field">
