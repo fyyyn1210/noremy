@@ -16,8 +16,8 @@ export default defineConfig({
         short_name: 'Noremy',
         lang: 'id',
         description: 'Harian, to-do, kalender, dan catatan dari Notion',
-        theme_color: '#1f1d24',
-        background_color: '#1f1d24',
+        theme_color: '#f5f5f7',
+        background_color: '#f5f5f7',
         display: 'standalone',
         start_url: '/',
         icons: [

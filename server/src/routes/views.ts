@@ -11,7 +11,43 @@ const CAL: { key: string; start: string; end?: string }[] = [
   { key: "english", start: "Start Date" },
 ];
 
+type Day = { date: string; total: number; done: number };
+
+/** Rekap habit per tanggal (WIB) + streak: hari berturut-turut dengan minimal 1 Done. */
+export function habitDays(rows: { props: Record<string, any> }[], today: string, n: number) {
+  const map = new Map<string, Day>();
+  for (let i = n - 1; i >= 0; i--) {
+    const date = todayWIB(new Date(Date.parse(today + "T12:00:00+07:00") - i * 86_400_000));
+    map.set(date, { date, total: 0, done: 0 });
+  }
+  for (const r of rows) {
+    const date = r.props["Due Date"]?.start?.slice(0, 10) ?? todayWIB(new Date(r.props["Created Time"]));
+    const d = map.get(date);
+    if (!d) continue;
+    d.total++;
+    if (r.props.Status === "Done") d.done++;
+  }
+  const days = [...map.values()];
+  // Hari ini belum selesai tidak memutus streak.
+  let i = days.length - 1;
+  if (!days[i].done) i--;
+  let streak = 0;
+  for (; i >= 0 && days[i].done; i--) streak++;
+  return { days, streak };
+}
+
+const WEEK_DAYS = 35;
+
 export default new Elysia()
+  // ponytail: streak dihitung dari 35 hari terakhir saja; perpanjang WEEK_DAYS bila streak lebih panjang.
+  .get("/week", async () => {
+    const today = todayWIB();
+    const from = todayWIB(new Date(Date.parse(today + "T12:00:00+07:00") - (WEEK_DAYS - 1) * 86_400_000));
+    const rows = await queryAll(DBS.habits!, {
+      filter: { timestamp: "created_time", created_time: { on_or_after: startOfDayWIB(from) } },
+    });
+    return { today, ...habitDays(rows.map(simplify), today, WEEK_DAYS) };
+  })
   // Hari ini: habit harian, task jatuh tempo (termasuk terlambat), review belajar yang jatuh tempo.
   .get("/today", async () => {
     const today = todayWIB();
@@ -27,10 +63,16 @@ export default new Elysia()
       filter: {
         and: [
           { property: "Done", checkbox: { equals: false } },
-          { property: "Due Date", date: { on_or_before: today } },
+          // Task tanpa tanggal juga ikut (kebanyakan task memang tidak diberi Due Date).
+          {
+            or: [
+              { property: "Due Date", date: { on_or_before: today } },
+              { property: "Due Date", date: { is_empty: true } },
+            ],
+          },
         ],
       },
-      sorts: [{ property: "Due Date", direction: "ascending" }],
+      sorts: [{ property: "Due Date", direction: "ascending" }, { timestamp: "created_time", direction: "descending" }],
     });
     const learning = await queryAll(DBS.learning!, {
       filter: {
@@ -42,11 +84,29 @@ export default new Elysia()
       },
       sorts: [{ property: "Next Session", direction: "ascending" }],
     });
+    // Mode belajar yang berjalan: Status Active, atau rentang Start–End mencakup hari ini.
+    // Notion hanya mengizinkan filter bersarang 2 tingkat; Done/Skipped disaring di sini.
+    const modes = DBS.learningMode
+      ? (await queryAll(DBS.learningMode, {
+          filter: {
+            or: [
+              { property: "Status", status: { equals: "Active" } },
+              {
+                and: [
+                  { property: "Start Date", date: { on_or_before: today } },
+                  { property: "End Date", date: { on_or_after: today } },
+                ],
+              },
+            ],
+          },
+        })).filter((p: any) => !["Done", "Skipped"].includes(p.properties.Status?.status?.name))
+      : [];
     return {
       today,
       habits: habits.map(simplify),
       tasks: tasks.map(simplify),
       learning: learning.map(simplify),
+      modes: modes.map(simplify),
     };
   })
   // Kalender gabungan. Query berurutan supaya tetap di bawah ~3 request/detik.

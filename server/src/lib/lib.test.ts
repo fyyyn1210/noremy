@@ -24,6 +24,29 @@ test("jendela 30 menit", () => {
   expect(dueNow(t, t + 31 * 60_000)).toBe(false);
 });
 
+test("habitDays: rekap per tanggal WIB dan streak", async () => {
+  const { habitDays } = await import("../routes/views");
+  const row = (created: string, Status: string, due?: string) => ({
+    props: { "Created Time": created, Status, "Due Date": due ? { start: due } : null },
+  });
+  const { days, streak } = habitDays(
+    [
+      row("2026-10-12T01:00:00Z", "Done"),
+      row("2026-10-13T01:00:00Z", "Done"),
+      row("2026-10-13T18:00:00Z", "Done"), // 01:00 WIB tanggal 14
+      row("2026-10-15T01:00:00Z", "Not started"),
+      row("2026-01-01T01:00:00Z", "Done", "2026-10-15"), // Due Date menang
+    ],
+    "2026-10-15",
+    5,
+  );
+  expect(days.map((d) => d.date)).toEqual(["2026-10-11", "2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15"]);
+  expect(days.map((d) => [d.total, d.done])).toEqual([[0, 0], [1, 1], [1, 1], [1, 1], [2, 1]]);
+  expect(streak).toBe(4);
+  // Hari ini belum ada Done: streak dihitung dari kemarin.
+  expect(habitDays([row("2026-10-14T01:00:00Z", "Done")], "2026-10-15", 3).streak).toBe(1);
+});
+
 test("toNotion lalu value kembali ke nilai semula", () => {
   const schema = {
     T: { type: "title" }, N: { type: "number" }, C: { type: "checkbox" }, S: { type: "status" },
