@@ -47,37 +47,40 @@ Fitur inti pertama: **notifikasi push** dari database Notion milik pengguna yang
 ## Kerangka folder
 
 ```
-<nama-proyek>/
-├── server/
+Noremy/
+├── server/                 Bun + Elysia, stateless
 │   └── src/
-│       ├── index.ts
-│       ├── routes/        tick.ts, subscribe.ts, notion.ts
-│       └── lib/           notion.ts, push.ts, time.ts
-├── web/
+│       ├── index.ts        auth (Bearer APP_TOKEN; /tick pakai TICK_SECRET), error map
+│       ├── routes/         db.ts (CRUD generik), views.ts (/today, /calendar), pages.ts (catatan), push.ts (/vapid, /subscribe, /tick)
+│       └── lib/            notion.ts (whitelist DBS, simplify/toNotion), push.ts, time.ts, lib.test.ts
+├── web/                    Vue 3 + TS + vite-plugin-pwa (injectManifest)
 │   └── src/
-│       ├── apps/          todo/, notifikasi/, dst. (satu folder per "aplikasi")
-│       └── sw.ts          service worker (terima push)
-├── .env                   NOTION_TOKEN, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, TICK_SECRET, DB IDs
+│       ├── apps/           hari-ini/, kalender/, database/, catatan/, monitor/ (satu folder per menu, daftar di App.vue)
+│       ├── components/     DbTable, DbForm (form dari skema Notion), Markdown
+│       ├── api.ts          fetch + token + helper tanggal WIB
+│       └── sw.ts           service worker (precache, cache API, push)
 └── CLAUDE.md
 ```
 
+## Database Notion yang dipakai (workspace "Riosras Kaa's Notion")
+
+| key | Database | Catatan |
+|---|---|---|
+| habits | Habit Database (Daily Tracker) | entri harian otomatis; `Time` teks "20.00"; `Status`; `Notified` |
+| tasks | Tasks Database (Daily Tracker) | `Name`, `Due Date` (bisa berjam), `Done`, `Notified` |
+| learningMode | Learning Mode | Start/End Date |
+| english | Daily English Tracker | Start Date |
+| learning | Learning Progress (Spaced Repetition) | `Next Session`, `Stage` |
+| streak | Streak Counter | formula, read-only |
+| notesDb | Notes Database (Work) | |
+| devices | Devices (Daily Tracker) | langganan push |
+| NOTES_PAGE_ID | halaman 📓 Notes | sub-page biasa |
+
+Data source ID ada di `server/.env.example`. Integration Notion harus di-share ke halaman Daily Tracker, Work, dan 📓 Notes.
+
 ## Environment variable
 
-```
-NOTION_TOKEN=
-NOTION_ENTRIES_DB_ID=
-NOTION_DEVICES_DB_ID=
-VAPID_PUBLIC_KEY=
-VAPID_PRIVATE_KEY=
-VAPID_SUBJECT=mailto:you@example.com
-TICK_SECRET=
-TIMEZONE=Asia/Jakarta
-# Nama properti dibuat configurable karena struktur database belum final:
-PROP_TITLE=Name
-PROP_TIME=Date
-PROP_DONE=Done
-PROP_NOTIFIED=Notified
-```
+Lihat `server/.env.example` dan `web/.env.example`. Nama properti untuk `/tick` di-hardcode sesuai tabel di atas.
 
 ## Urutan pengerjaan
 
